@@ -1,28 +1,488 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jumping Game</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Упражнения Кегеля</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            overflow: hidden;
-            background: #000;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            color: white;
         }
-        #gameCanvas {
-            touch-action: none;
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 300;
+        }
+        
+        .exercise-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            margin: 30px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .exercise-circle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        
+        .hold {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            box-shadow: 0 10px 30px rgba(238, 90, 82, 0.4);
+            transform: scale(0.9);
+        }
+        
+        .release {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            box-shadow: 0 10px 30px rgba(68, 160, 141, 0.4);
+            transform: scale(1.1);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            font-size: 18px;
+        }
+        
+        .stat {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 4px;
+        }
+        
+        .instruction {
+            font-size: 18px;
+            margin: 20px 0;
+            opacity: 0.9;
+        }
+        
+        .pulse {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+            animation: fastPulse 0.5s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes fastPulse {
+            0% { transform: scale(0.95); }
+            100% { transform: scale(1.05); }
+        }
+        
+        .pulsing {
+            animation: pulse 2s infinite;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <script src="game.js"></script>
+    <div class="container">
+        <h1>Упражнения Кегеля</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div>Уровень</div>
+                <div id="level">1</div>
+            </div>
+            <div class="stat">
+                <div>Подходы</div>
+                <div id="sets">0</div>
+            </div>
+            <div class="stat">
+                <div>Циклы</div>
+                <div id="cycles">0</div>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="instruction" id="instruction">Нажмите СТАРТ для начала</div>
+        
+        <div class="exercise-circle" id="exerciseCircle">
+            <span id="circleText">ГОТОВ</span>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">СТАРТ</button>
+            <button id="pauseBtn">ПАУЗА</button>
+            <button id="resetBtn">СБРОС</button>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let currentPhase = 'ready'; // ready, hold, release
+        let timer = null;
+        let currentTime = 0;
+        let currentLevel = 1;
+        let holdTime = 5; // секунды
+        let releaseTime = 5; // секунды
+        let sets = 0;
+        let cycles = 0;
+        let totalCycles = 10;
+        let restTimer = null;
+        let restTime = 0;
+        let pulseCount = 0;
+        let totalPulses = 20;
+        
+        const circle = document.getElementById('exerciseCircle');
+        const circleText = document.getElementById('circleText');
+        const instruction = document.getElementById('instruction');
+        const progressFill = document.getElementById('progressFill');
+        const levelDisplay = document.getElementById('level');
+        const setsDisplay = document.getElementById('sets');
+        const cyclesDisplay = document.getElementById('cycles');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        function updateDisplay() {
+            levelDisplay.textContent = currentLevel;
+            setsDisplay.textContent = sets;
+            cyclesDisplay.textContent = cycles;
+        }
+        
+        function updateProgress() {
+            let totalTime = currentPhase === 'hold' ? holdTime : releaseTime;
+            let progress = (currentTime / totalTime) * 100;
+            progressFill.style.width = progress + '%';
+        }
+        
+        function startHoldPhase() {
+            currentPhase = 'hold';
+            currentTime = 0;
+            circle.className = 'exercise-circle hold pulsing';
+            circleText.textContent = 'СЖАТЬ';
+            instruction.textContent = 'Сожмите мышцы и держите';
+            
+            timer = setInterval(() => {
+                currentTime++;
+                updateProgress();
+                circleText.textContent = `${holdTime - currentTime}`;
+                
+                if (currentTime >= holdTime) {
+                    clearInterval(timer);
+                    startReleasePhase();
+                }
+            }, 1000);
+        }
+        
+        function startReleasePhase() {
+            currentPhase = 'release';
+            currentTime = 0;
+            circle.className = 'exercise-circle release pulsing';
+            circleText.textContent = 'РАССЛАБИТЬ';
+            instruction.textContent = 'Расслабьте мышцы';
+            
+            timer = setInterval(() => {
+                currentTime++;
+                updateProgress();
+                circleText.textContent = `${releaseTime - currentTime}`;
+                
+                if (currentTime >= releaseTime) {
+                    clearInterval(timer);
+                    cycles++;
+                    updateDisplay();
+                    
+                    if (cycles >= totalCycles) {
+                        completeCycle();
+                    } else {
+                        startHoldPhase();
+                    }
+                }
+            }, 1000);
+        }
+        
+        function completeCycle() {
+            sets++;
+            cycles = 0;
+            updateDisplay();
+            
+            if (currentLevel === 1) {
+                startRestPeriod(20, () => {
+                    currentLevel = 2;
+                    holdTime = 5;
+                    releaseTime = 2;
+                    cycles = 0;
+                    updateDisplay();
+                    isRunning = true;
+                    startHoldPhase();
+                });
+            } else if (currentLevel === 2) {
+                startRestPeriod(20, () => {
+                    currentLevel = 3;
+                    cycles = 0;
+                    updateDisplay();
+                    startPulseExercise();
+                });
+            } else {
+                // Тренировка завершена
+                currentPhase = 'ready';
+                circle.className = 'exercise-circle';
+                circleText.textContent = 'ГОТОВ';
+                instruction.textContent = 'Тренировка завершена! Отличная работа!';
+                progressFill.style.width = '100%';
+                isRunning = false;
+            }
+        }
+        
+        function startRestPeriod(duration, callback) {
+            currentPhase = 'rest';
+            restTime = duration;
+            circle.className = 'exercise-circle';
+            circle.classList.remove('pulsing');
+            instruction.textContent = `Отдых ${duration} секунд`;
+            isRunning = false;
+            circleText.textContent = duration;
+            
+            restTimer = setInterval(() => {
+                restTime--;
+                circleText.textContent = restTime;
+                progressFill.style.width = ((duration - restTime) / duration) * 100 + '%';
+                
+                if (restTime <= 0) {
+                    clearInterval(restTimer);
+                    restTimer = null;
+                    progressFill.style.width = '0%';
+                    callback();
+                }
+            }, 1000);
+        }
+        
+        function startPulseExercise() {
+            currentPhase = 'pulse';
+            pulseCount = 0;
+            isRunning = true;
+            instruction.textContent = 'Быстрые пульсирующие сокращения';
+            
+            function doPulse() {
+                if (pulseCount >= totalPulses) {
+                    completePulseExercise();
+                    return;
+                }
+                
+                // Сжатие (0.5 сек)
+                circle.className = 'exercise-circle hold';
+                circleText.textContent = 'ПУЛЬС';
+                
+                setTimeout(() => {
+                    // Расслабление (0.5 сек)
+                    circle.className = 'exercise-circle release';
+                    pulseCount++;
+                    circleText.textContent = `${totalPulses - pulseCount}`;
+                    progressFill.style.width = (pulseCount / totalPulses) * 100 + '%';
+                    
+                    setTimeout(() => {
+                        doPulse();
+                    }, 500);
+                }, 500);
+            }
+            
+            doPulse();
+        }
+        
+        function completePulseExercise() {
+            sets++;
+            currentPhase = 'ready';
+            circle.className = 'exercise-circle';
+            circleText.textContent = 'ГОТОВ';
+            instruction.textContent = 'Все упражнения завершены! Превосходно!';
+            progressFill.style.width = '100%';
+            isRunning = false;
+            updateDisplay();
+        }
+        
+        function start() {
+            if (!isRunning && currentPhase === 'ready') {
+                isRunning = true;
+                startHoldPhase();
+            } else if (currentPhase === 'rest' && restTimer) {
+                // Возобновить отдых после паузы
+                restTimer = setInterval(() => {
+                    restTime--;
+                    circleText.textContent = restTime;
+                    progressFill.style.width = ((20 - restTime) / 20) * 100 + '%';
+                    
+                    if (restTime <= 0) {
+                        clearInterval(restTimer);
+                        progressFill.style.width = '0%';
+                        if (currentLevel === 2) {
+                            startHoldPhase();
+                        } else if (currentLevel === 3) {
+                            startPulseExercise();
+                        }
+                    }
+                }, 1000);
+            } else if (currentPhase === 'hold' || currentPhase === 'release') {
+                // Возобновить текущую фазу
+                isRunning = true;
+                circle.classList.add('pulsing');
+                if (currentPhase === 'hold') {
+                    instruction.textContent = 'Сожмите мышцы и держите';
+                } else {
+                    instruction.textContent = 'Расслабьте мышцы';
+                }
+                
+                timer = setInterval(() => {
+                    currentTime++;
+                    updateProgress();
+                    let totalTime = currentPhase === 'hold' ? holdTime : releaseTime;
+                    circleText.textContent = `${totalTime - currentTime}`;
+                    
+                    if (currentTime >= totalTime) {
+                        clearInterval(timer);
+                        if (currentPhase === 'hold') {
+                            startReleasePhase();
+                        } else {
+                            cycles++;
+                            updateDisplay();
+                            
+                            if (cycles >= totalCycles) {
+                                completeCycle();
+                            } else {
+                                startHoldPhase();
+                            }
+                        }
+                    }
+                }, 1000);
+            }
+        }
+        
+        function pause() {
+            if (isRunning) {
+                clearInterval(timer);
+                isRunning = false;
+                circle.classList.remove('pulsing');
+                instruction.textContent = 'Пауза - нажмите СТАРТ для продолжения';
+            }
+            if (restTimer) {
+                clearInterval(restTimer);
+                instruction.textContent = 'Отдых приостановлен - нажмите СТАРТ для продолжения';
+            }
+        }
+        
+        function reset() {
+            clearInterval(timer);
+            clearInterval(restTimer);
+            isRunning = false;
+            currentPhase = 'ready';
+            currentLevel = 1;
+            currentTime = 0;
+            restTime = 0;
+            sets = 0;
+            cycles = 0;
+            pulseCount = 0;
+            holdTime = 5;
+            releaseTime = 5;
+            circle.className = 'exercise-circle';
+            circleText.textContent = 'ГОТОВ';
+            instruction.textContent = 'Нажмите СТАРТ для начала';
+            progressFill.style.width = '0%';
+            updateDisplay();
+        }
+        
+        startBtn.addEventListener('click', start);
+        pauseBtn.addEventListener('click', pause);
+        resetBtn.addEventListener('click', reset);
+        
+        // Инициализация
+        updateDisplay();
+    </script>
 </body>
-</html> 
+</html>
